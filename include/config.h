@@ -26,7 +26,7 @@
 #define MAX_TIMING_POINTS 1000
 #define MAX_COMBO 1000
 
-#define DATA_PATH "ux0:/data/osu-vita/"
+#define DATA_PATH "ux0:/data/osuvita/"
 #define MAPS_PATH DATA_PATH "maps/"
 #define DOWNLOADS_PATH DATA_PATH "downloads/"
 
