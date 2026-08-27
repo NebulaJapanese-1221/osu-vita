@@ -12,7 +12,7 @@ project(osuvita)
 include("${VITASDK}/share/vita.cmake" REQUIRED)
 
 set(VITA_APP_NAME "osuvita")
-set(VITA_TITLEID  "OSU000001")
+set(VITA_TITLEID  "OSU000002")
 set(VITA_VERSION  "01.00")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11")
