@@ -9,6 +9,7 @@
 #include <psp2/ctrl.h>
 #include <psp2/touch.h>
 #include <psp2/io/dirent.h>
+#include <psp2/io/stat.h>
 #include <psp2/kernel/processmgr.h>
 #include <string.h>
 #include <stdio.h>
@@ -226,6 +227,10 @@ int main(int argc, char *argv[]) {
 	scene_init(&g_scene);
 	audio_init(&g_audio);
 	vita2d_set_clear_color(COLOR_BLACK);
+
+	sceIoMkdir("ux0:/data/osuvita", 0777);
+	sceIoMkdir("ux0:/data/osuvita/maps", 0777);
+	sceIoMkdir("ux0:/data/osuvita/downloads", 0777);
 
 	bool running = true;
 	while (running) {

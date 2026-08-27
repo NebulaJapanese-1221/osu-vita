@@ -12,6 +12,12 @@ fi
   return 1 || exit 1
 }
 
+if [ "$1" = "clean" ]; then
+  rm -rf build
+  echo "Cleaned build directory."
+  exit 0
+fi
+
 [ -d 'build' ] || mkdir build
 cd build
 cmake .. && make
