@@ -1,0 +1,12 @@
+/build/
+/*.vpk
+/*.self
+/*.velf
+/*.out
+*.sfo
+vpk_extracted/
+vpk_check*/
+.vscode/
+*.swp
+*.swo
+*~

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LiveArea>
+  <Screens>
+    <Screen>
+      <Default target="default_gate"/>
+    </Screen>
+  </Screens>
+  <Contents>
+    <Content id="default_gate">
+      <Gate bg0="bg0.png" pic0="pic0.png"/>
+    </Content>
+  </Contents>
+</LiveArea>
