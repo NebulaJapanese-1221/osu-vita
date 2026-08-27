@@ -61,15 +61,3 @@ vita_create_self(${PROJECT_NAME}.self ${PROJECT_NAME}
 )
 
 set(VITA_MKSFOEX_FLAGS "${VITA_MKSFOEX_FLAGS} -s PSP2_SYSTEM_VER=03.000 -d PARENTAL_LEVEL=1 -s ATTRIBUTE2=00.000")
-
-vita_create_vpk(${PROJECT_NAME}.vpk ${VITA_TITLEID} ${PROJECT_NAME}.self
-  VERSION ${VITA_VERSION}
-  NAME ${VITA_APP_NAME}
-  FILE assets/icon0.png sce_sys/icon0.png
-  FILE assets/bg.png sce_sys/livearea/contents/bg.png
-  FILE assets/startup.png sce_sys/livearea/contents/startup.png
-  FILE assets/livearea/contents/template.xml sce_sys/livearea/contents/template.xml
-  FILE assets/bgm.wav ux0:/data/osu-vita/bgm.wav
-  FILE assets/sample_beatmap.osu ux0:/data/osu-vita/maps/sample_beatmap.osu
-  FILE assets/config.ini ux0:/data/osu-vita/config.ini
-)
