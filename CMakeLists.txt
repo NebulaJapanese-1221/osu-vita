@@ -12,7 +12,7 @@ project(osuvita)
 include("${VITASDK}/share/vita.cmake" REQUIRED)
 
 set(VITA_APP_NAME "osuvita")
-set(VITA_TITLEID  "OSU300001")
+set(VITA_TITLEID  "OSU000003")
 set(VITA_VERSION  "01.00")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11")
@@ -57,9 +57,9 @@ target_link_libraries(${PROJECT_NAME}
   SceLibc_stub
 )
 
-vita_create_self(${PROJECT_NAME}.self ${PROJECT_NAME})
+vita_create_self(${PROJECT_NAME}.self ${PROJECT_NAME} UNSAFE)
 
-set(VITA_MKSFOEX_FLAGS "${VITA_MKSFOEX_FLAGS} -s PSP2_SYSTEM_VER=03.000 -d PARENTAL_LEVEL=1 -s ATTRIBUTE2=00.000 -s CATEGORY=ac")
+set(VITA_MKSFOEX_FLAGS "${VITA_MKSFOEX_FLAGS} -s PSP2_SYSTEM_VER=03.000 -d PARENTAL_LEVEL=1 -s ATTRIBUTE2=00.000 -s CATEGORY=ac -s TITLE_ID=OSU300001")
 
 vita_create_vpk(${PROJECT_NAME}.vpk ${VITA_TITLEID} ${PROJECT_NAME}.self
   VERSION ${VITA_VERSION}
