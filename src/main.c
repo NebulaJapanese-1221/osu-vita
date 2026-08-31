@@ -153,13 +153,15 @@ static void scene_settings_render(void) {
 	render_draw_text("CROSS/CIRCLE: back", 20, SCREEN_H - 40, COLOR_GREY, 0.8f);
 }
 
-static void scene_select_update(void) {
-	const pad_state_t *pad = input_pad();
-	if (input_just_pressed_cross()) {
-		if (load_selected_map()) {
-			scene_change(&g_scene, SCENE_GAME);
+	static void scene_select_update(void) {
+		const pad_state_t *pad = input_pad();
+		if (input_just_pressed_cross()) {
+			if (load_selected_map()) {
+				game_init(&g_game, &g_beatmap);
+				game_start(&g_game);
+				scene_change(&g_scene, SCENE_GAME);
+			}
 		}
-	}
 	if (input_just_released_circle()) {
 		scene_change(&g_scene, SCENE_MAIN_MENU);
 	}
@@ -218,6 +220,14 @@ static void scene_results_render(void) {
 	}
 }
 
+static int safe_mkdir(const char *path) {
+	int ret = sceIoMkdir(path, 0777);
+	if (ret < 0 && ret != 0x80010011) {
+		return ret;
+	}
+	return 0;
+}
+
 int main(int argc, char *argv[]) {
 	(void)argc;
 	(void)argv;
@@ -228,9 +238,10 @@ int main(int argc, char *argv[]) {
 	audio_init(&g_audio);
 	vita2d_set_clear_color(COLOR_BLACK);
 
-	sceIoMkdir("ux0:/data/osuvita", 0777);
-	sceIoMkdir("ux0:/data/osuvita/maps", 0777);
-	sceIoMkdir("ux0:/data/osuvita/downloads", 0777);
+	safe_mkdir("ux0:/data");
+	safe_mkdir("ux0:/data/osuvita");
+	safe_mkdir("ux0:/data/osuvita/maps");
+	safe_mkdir("ux0:/data/osuvita/downloads");
 
 	bool running = true;
 	while (running) {
@@ -249,6 +260,14 @@ int main(int argc, char *argv[]) {
 				break;
 			case SCENE_BEATMAP_SELECT:
 				scene_select_update();
+				break;
+			case SCENE_GAME:
+				if (g_game.finished && g_game.rank_shown) {
+					if (input_just_pressed_cross() && g_game.rank_show_time > 500) {
+						game_fini(&g_game);
+						scene_change(&g_scene, SCENE_BEATMAP_SELECT);
+					}
+				}
 				break;
 			default:
 				break;
@@ -270,10 +289,13 @@ int main(int argc, char *argv[]) {
 				scene_select_render();
 				break;
 			case SCENE_GAME:
-				if (game_is_finished(&g_game)) {
-					scene_change(&g_scene, SCENE_RESULTS);
-				} else {
-					game_update(&g_game, input_pad(), input_touch(), 16);
+				if (g_beatmap_loaded && g_game.next_scene >= 0) {
+					scene_change(&g_scene, (scene_id_t)g_game.next_scene);
+					g_game.next_scene = -1;
+				} else if (g_beatmap_loaded) {
+					if (!g_game.finished && !g_game.info_shown && !g_game.rank_shown) {
+						game_update(&g_game, input_pad(), input_touch(), 16);
+					}
 					game_render(&g_game);
 				}
 				break;

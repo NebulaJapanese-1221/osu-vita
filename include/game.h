@@ -11,6 +11,11 @@
 #define MAX_ACTIVE_OBJECTS 64
 #define CURSOR_RADIUS 8.0f
 
+typedef enum {
+	OBJ_CIRCLE,
+	OBJ_SLIDER,
+} active_object_type_t;
+
 typedef struct {
 	vec2_t pos;
 	float target_radius;
@@ -22,6 +27,12 @@ typedef struct {
 	bool hit;
 	hit_result_t result;
 	int id;
+	int combo_color_index;
+	active_object_type_t active_type;
+	float slider_progress;
+	float slider_start_angle;
+	vec2_t slider_start_pos;
+	bool slider_following;
 } active_object_t;
 
 typedef struct {
@@ -52,6 +63,13 @@ typedef struct {
 
 	bool finished;
 	int finish_time;
+	unsigned int combo_colors[4];
+	int current_combo_color;
+	vita2d_texture *background;
+	bool info_shown;
+	bool rank_shown;
+	int rank_show_time;
+	int next_scene;
 } game_state_t;
 
 void game_init(game_state_t *gs, const beatmap_t *bm);

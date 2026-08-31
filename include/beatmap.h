@@ -3,6 +3,13 @@
 
 #include "config.h"
 
+#define MAX_SLIDER_POINTS 64
+
+typedef struct {
+	float x, y;
+	int type;
+} slider_point_t;
+
 typedef enum {
 	OBJECT_CIRCLE = 1,
 	OBJECT_SLIDER = 2,
@@ -14,6 +21,11 @@ typedef struct {
 	int time;
 	int type;
 	int hit_sound;
+	int combo_offset;
+	float slider_length;
+	slider_point_t points[MAX_SLIDER_POINTS];
+	int point_count;
+	int slides;
 } hit_object_t;
 
 typedef struct {
@@ -29,6 +41,7 @@ typedef struct {
 	char creator[128];
 	char difficulty[64];
 	char audio_file[128];
+	char background_file[256];
 	int hp_drain;
 	int circle_size;
 	int approach_rate;
@@ -46,6 +59,7 @@ typedef struct {
 	int timing_count;
 	int total_length;
 	int offset;
+	char path[512];
 } beatmap_t;
 
 int beatmap_parse(beatmap_t *bm, const char *data, int size);

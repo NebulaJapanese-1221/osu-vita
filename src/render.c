@@ -14,7 +14,6 @@ void render_init(void) {
 }
 
 void render_fini(void) {
-	if (g_render.font) vita2d_free_font(g_render.font);
 	if (g_pgf) vita2d_free_pgf(g_pgf);
 	vita2d_fini();
 }
@@ -134,4 +133,74 @@ void render_draw_progress_bar(float x, float y, float w, float h, float fraction
 	vita2d_draw_line(x, y + h, x + w, y + h, COLOR_WHITE);
 	vita2d_draw_line(x, y, x, y + h, COLOR_WHITE);
 	vita2d_draw_line(x + w, y, x + w, y + h, COLOR_WHITE);
+}
+
+void render_draw_pause_menu(void) {
+	float w = 400;
+	float h = 220;
+	float x = (SCREEN_W - w) / 2;
+	float y = (SCREEN_H - h) / 2;
+	vita2d_draw_rectangle(x, y, w, h, RGBA8(0, 0, 0, 200));
+	render_draw_rect(x, y, w, h, RGBA8(255, 255, 255, 255));
+
+	const char *items[] = {"Resume", "Retry", "Quit"};
+	for (int i = 0; i < 3; i++) {
+		int ty = (int)(y + 60 + i * 50);
+		render_draw_text(items[i], (int)(x + 40), ty, COLOR_WHITE, 1.2f);
+	}
+	render_draw_text("CROSS: select  CIRCLE: resume", (int)x + 40, (int)(y + h - 40), COLOR_GREY, 0.8f);
+}
+
+void render_draw_rank_screen(const char *rank, int score, int max_combo, int accuracy300, int accuracy100, int accuracy50, int misses) {
+	vita2d_draw_rectangle(0, 0, SCREEN_W, SCREEN_H, RGBA8(0, 0, 0, 220));
+
+	render_draw_text("Stage Clear!", SCREEN_W / 2 - 90, 80, COLOR_YELLOW, 2.0f);
+	render_draw_text(rank, SCREEN_W / 2 - 20, 140, COLOR_CYAN, 2.5f);
+
+	char buf[256];
+	snprintf(buf, sizeof(buf), "Score: %d", score);
+	render_draw_text(buf, SCREEN_W / 2 - 80, 200, COLOR_WHITE, 1.2f);
+	snprintf(buf, sizeof(buf), "Combo: x%d", max_combo);
+	render_draw_text(buf, SCREEN_W / 2 - 80, 230, COLOR_WHITE, 1.2f);
+	snprintf(buf, sizeof(buf), "300:%d 100:%d 50:%d Miss:%d", accuracy300, accuracy100, accuracy50, misses);
+	render_draw_text(buf, SCREEN_W / 2 - 120, 260, COLOR_WHITE, 1.0f);
+
+	int total = accuracy300 + accuracy100 + accuracy50 + misses;
+	if (total > 0) {
+		float acc = (accuracy300 * 100.0f + accuracy100 * 66.67f + accuracy50 * 33.33f) / total;
+		snprintf(buf, sizeof(buf), "Accuracy: %.2f%%", acc);
+		render_draw_text(buf, SCREEN_W / 2 - 80, 290, COLOR_WHITE, 1.0f);
+	}
+
+	render_draw_text("Press CROSS for menu", SCREEN_W / 2 - 110, 340, COLOR_WHITE, 1.0f);
+}
+
+void render_draw_info_screen(const char *title, const char *artist, const char *difficulty, int objects) {
+	vita2d_draw_rectangle(0, 0, SCREEN_W, SCREEN_H, RGBA8(0, 0, 0, 240));
+
+	char buf[256];
+	snprintf(buf, sizeof(buf), "%s", title);
+	render_draw_text(buf, SCREEN_W / 2 - render_text_width(buf, 1.5f) / 2, 140, COLOR_WHITE, 1.5f);
+	snprintf(buf, sizeof(buf), "%s", artist);
+	render_draw_text(buf, SCREEN_W / 2 - render_text_width(buf, 1.0f) / 2, 180, COLOR_GREY, 1.0f);
+	snprintf(buf, sizeof(buf), "Difficulty: %s", difficulty);
+	render_draw_text(buf, SCREEN_W / 2 - render_text_width(buf, 1.0f) / 2, 210, COLOR_YELLOW, 1.0f);
+	snprintf(buf, sizeof(buf), "Objects: %d", objects);
+	render_draw_text(buf, SCREEN_W / 2 - render_text_width(buf, 1.0f) / 2, 240, COLOR_WHITE, 1.0f);
+
+	render_draw_text("Press CROSS to start", SCREEN_W / 2 - 110, 320, COLOR_WHITE, 1.0f);
+}
+
+void render_draw_keymode_overlay(bool k1, bool k2, bool m1, bool m2) {
+	int x = SCREEN_W - 160;
+	int y = SCREEN_H - 80;
+	unsigned int c1 = k1 ? COLOR_YELLOW : COLOR_GREY;
+	unsigned int c2 = k2 ? COLOR_YELLOW : COLOR_GREY;
+	unsigned int c3 = m1 ? COLOR_YELLOW : COLOR_GREY;
+	unsigned int c4 = m2 ? COLOR_YELLOW : COLOR_GREY;
+
+	render_draw_text("K1", x, y, c1, 1.0f);
+	render_draw_text("K2", x + 40, y, c2, 1.0f);
+	render_draw_text("M1", x + 80, y, c3, 1.0f);
+	render_draw_text("M2", x + 120, y, c4, 1.0f);
 }

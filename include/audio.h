@@ -30,5 +30,6 @@ void audio_stop_bgm(audio_t *audio);
 void audio_set_bgm_volume(audio_t *audio, float vol);
 
 void audio_play_hit_sound(audio_t *audio, int result);
+void audio_load_hit_sounds(audio_t *audio, const char *dir);
 
 #endif

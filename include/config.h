@@ -37,6 +37,9 @@ typedef enum {
 	SCENE_SETTINGS,
 	SCENE_GAME,
 	SCENE_RESULTS,
+	SCENE_INFO,
+	SCENE_PAUSE,
+	SCENE_RANK,
 } scene_id_t;
 
 typedef enum {

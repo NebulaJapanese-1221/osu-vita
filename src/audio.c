@@ -20,6 +20,14 @@ static SceUID g_bgm_thread = -1;
 static wav_t g_bgm_wav;
 static bool g_bgm_loaded = false;
 
+static int g_sfx_port = -1;
+
+static wav_t g_hit_normal;
+static wav_t g_hit_whistle;
+static wav_t g_hit_finish;
+static wav_t g_hit_clap;
+static bool g_hit_sounds_loaded = false;
+
 static int bgm_thread_func(SceSize args, void *argp) {
 	(void)args;
 	(void)argp;
@@ -152,6 +160,17 @@ int audio_init(audio_t *audio) {
 
 void audio_fini(audio_t *audio) {
 	audio_stop_bgm(audio);
+	if (g_hit_sounds_loaded) {
+		audio_free_wav(&g_hit_normal);
+		audio_free_wav(&g_hit_whistle);
+		audio_free_wav(&g_hit_finish);
+		audio_free_wav(&g_hit_clap);
+		g_hit_sounds_loaded = false;
+	}
+	if (g_sfx_port >= 0) {
+		sceAudioOutReleasePort(g_sfx_port);
+		g_sfx_port = -1;
+	}
 	memset(audio, 0, sizeof(*audio));
 }
 
@@ -224,36 +243,66 @@ void audio_set_bgm_volume(audio_t *audio, float vol) {
 	}
 }
 
-static int g_sfx_port = -1;
+void audio_load_hit_sounds(audio_t *audio, const char *dir) {
+	(void)audio;
+	memset(&g_hit_normal, 0, sizeof(g_hit_normal));
+	memset(&g_hit_whistle, 0, sizeof(g_hit_whistle));
+	memset(&g_hit_finish, 0, sizeof(g_hit_finish));
+	memset(&g_hit_clap, 0, sizeof(g_hit_clap));
+	g_hit_sounds_loaded = false;
+
+	char path[512];
+	snprintf(path, sizeof(path), "%s%s", dir, "hitsound.wav");
+	if (audio_load_wav(&g_hit_normal, path) == 0) {
+		g_hit_sounds_loaded = true;
+	}
+	snprintf(path, sizeof(path), "%s%s", dir, "hitsound-finish.wav");
+	audio_load_wav(&g_hit_finish, path);
+	snprintf(path, sizeof(path), "%s%s", dir, "hitsound-whistle.wav");
+	audio_load_wav(&g_hit_whistle, path);
+	snprintf(path, sizeof(path), "%s%s", dir, "hitsound-clap.wav");
+	audio_load_wav(&g_hit_clap, path);
+}
 
 void audio_play_hit_sound(audio_t *audio, int result) {
+	(void)audio;
+	(void)result;
 	if (!g_sfx_port) {
 		g_sfx_port = sceAudioOutOpenPort(SCE_AUDIO_OUT_PORT_TYPE_BGM, 512, 44100, SCE_AUDIO_OUT_MODE_MONO);
 	}
 	if (g_sfx_port < 0) return;
 
-	int freq = 44100;
-	float duration_s = 0.12f;
-	int n = (int)(freq * duration_s);
-	short *samples = malloc(n * sizeof(short));
-	if (!samples) return;
-
-	int base_freq;
-	switch (result) {
-		case HIT_300: base_freq = 660; break;
-		case HIT_100: base_freq = 440; break;
-		case HIT_50:  base_freq = 220; break;
-		default:      base_freq = 110; break;
+	wav_t *wav = NULL;
+	if (result == HIT_300 || result == HIT_100 || result == HIT_50) {
+		wav = &g_hit_normal;
 	}
-	int volume = (result == HIT_MISS) ? 3276 : 8192;
 
-	for (int i = 0; i < n; i++) {
-		float t = (float)i / (float)freq;
-		float env = 1.0f - (t / duration_s);
-		env = powf(env, 3.0f);
-		float wave = sinf(2.0f * (float)M_PI * base_freq * t) * env * volume;
-		samples[i] = (short)wave;
+	if (wav && wav->samples && wav->sample_count > 0) {
+		sceAudioOutOutput(g_sfx_port, wav->samples);
+	} else {
+		int freq = 44100;
+		float duration_s = 0.12f;
+		int n = (int)(freq * duration_s);
+		short *samples = malloc(n * sizeof(short));
+		if (!samples) return;
+
+		int base_freq;
+		switch (result) {
+			case HIT_300: base_freq = 660; break;
+			case HIT_100: base_freq = 440; break;
+			case HIT_50:  base_freq = 220; break;
+			default:      base_freq = 110; break;
+		}
+		int volume = (result == HIT_MISS) ? 3276 : 8192;
+
+		for (int i = 0; i < n; i++) {
+			float t = (float)i / (float)freq;
+			float env = 1.0f - (t / duration_s);
+			env = powf(env, 3.0f);
+			float wave = sinf(2.0f * (float)M_PI * base_freq * t) * env * volume;
+			samples[i] = (short)wave;
+		}
+		sceAudioOutOutput(g_sfx_port, samples);
+		free(samples);
 	}
-	sceAudioOutOutput(g_sfx_port, samples);
-	free(samples);
 }

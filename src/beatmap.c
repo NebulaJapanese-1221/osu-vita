@@ -55,6 +55,7 @@ int beatmap_parse(beatmap_t *bm, const char *data, int size) {
 	memset(bm, 0, sizeof(*bm));
 	strcpy(bm->metadata.title, "Unknown");
 	strcpy(bm->metadata.audio_file, "bgm.wav");
+	strcpy(bm->metadata.background_file, "");
 
 	char *buf = (char *)data;
 
@@ -71,6 +72,40 @@ int beatmap_parse(beatmap_t *bm, const char *data, int size) {
 			while (*val == ' ') val++;
 			if (strcmp(line, "AudioFilename") == 0) {
 				strncpy(bm->metadata.audio_file, val, sizeof(bm->metadata.audio_file) - 1);
+			}
+			line = next_line(line);
+		}
+	}
+
+	char *events = find_section(buf, "Events");
+	if (events) {
+		char *line = next_line(events);
+		char *section_end = find_section(line, "TimingPoints");
+		if (!section_end) section_end = find_section(line, "HitObjects");
+		if (!section_end) section_end = buf + size;
+		while (line < section_end && *line) {
+			trim(line);
+			if (*line == '\0') { line = next_line(line); continue; }
+			if (line[0] == '/' && line[1] == '/') { line = next_line(line); continue; }
+			if (line[0] == ' ') { line = next_line(line); continue; }
+			
+			int event_type = parse_int(line, -1);
+			if (event_type == 0) {
+				char *p1 = strchr(line, ',') + 1;
+				(void)p1;
+				char *p2 = strchr(p1, ',') + 1;
+				if (p2) {
+					char *start = strchr(p2, '"');
+					if (start) {
+						char *end = strchr(start + 1, '"');
+						if (end) {
+							int len = (int)(end - start - 1);
+							if (len >= (int)sizeof(bm->metadata.background_file)) len = sizeof(bm->metadata.background_file) - 1;
+							strncpy(bm->metadata.background_file, start + 1, len);
+							bm->metadata.background_file[len] = '\0';
+						}
+					}
+				}
 			}
 			line = next_line(line);
 		}
@@ -121,6 +156,7 @@ int beatmap_parse(beatmap_t *bm, const char *data, int size) {
 	if (ho) {
 		char *line = next_line(ho);
 		int total_len = (int)strlen(buf);
+		int combo_counter = 0;
 		while (line < buf + total_len && *line && bm->object_count < MAX_BEATMAP_OBJECTS) {
 			trim(line);
 			if (*line == '\0') { line = next_line(line); continue; }
@@ -133,14 +169,58 @@ int beatmap_parse(beatmap_t *bm, const char *data, int size) {
 			int type = parse_int(p3, 0);
 			char *p4 = strchr(p3, ',') + 1;
 			int hit_sound = parse_int(p4, 0);
-			(void)hit_sound;
 
-			hit_object_t *o = &bm->objects[bm->object_count++];
+			hit_object_t *o = &bm->objects[bm->object_count];
 			o->pos.x = (float)x;
 			o->pos.y = (float)y;
 			o->time = time;
 			o->type = type;
 			o->hit_sound = hit_sound;
+			o->combo_offset = combo_counter % 8;
+			o->slides = 1;
+			o->slider_length = 0.0f;
+			o->point_count = 0;
+
+			if (type == OBJECT_SLIDER) {
+				char *p5 = strchr(p4, ',') + 1;
+				char *curve_type = p5;
+				char *p6 = strchr(p5, '|');
+				if (p6) {
+					*p6 = '\0';
+					p6++;
+					char *p7 = strrchr(p6, ',');
+					if (p7) {
+						*p7 = '\0';
+						char *slider_len_str = p7 + 1;
+						o->slider_length = parse_float(slider_len_str, 0.0f);
+						char *slides_str = strchr(p7, ',') + 1;
+						o->slides = parse_int(slides_str, 1);
+					}
+					while (*p6 && o->point_count < MAX_SLIDER_POINTS) {
+						int px = parse_int(p6, 0);
+						char *py_str = strchr(p6, ':') + 1;
+						int py = parse_int(py_str, 0);
+						o->points[o->point_count].x = (float)px;
+						o->points[o->point_count].y = (float)py;
+						o->points[o->point_count].type = 1;
+						o->point_count++;
+						p6 = strchr(py_str, ',');
+						if (p6) p6++;
+						else break;
+					}
+				} else {
+					char *p7 = strchr(p5, ',');
+					if (p7) {
+						*p7 = '\0';
+						o->slider_length = parse_float(p7 + 1, 0.0f);
+						char *slides_str = strchr(p7 + 1, ',') + 1;
+						o->slides = parse_int(slides_str, 1);
+					}
+				}
+			}
+
+			combo_counter++;
+			bm->object_count++;
 			line = next_line(line);
 		}
 	}
@@ -158,6 +238,10 @@ int beatmap_load(beatmap_t *bm, const char *path) {
 	if (!data) return -1;
 	int ret = beatmap_parse(bm, data, size);
 	free(data);
+	if (ret > 0) {
+		strncpy(bm->path, path, sizeof(bm->path) - 1);
+		bm->path[sizeof(bm->path) - 1] = '\0';
+	}
 	return ret;
 }
 
